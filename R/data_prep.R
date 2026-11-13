@@ -30,12 +30,10 @@ dept_label <- function(code) {
 
 load_sae <- function(path) {
   ext <- tolower(tools::file_ext(path))
-  df <- if (ext %in% c("xlsx", "xls")) {
-    as.data.frame(readxl::read_excel(path, guess_max = 1e5))
-  } else {
-    utils::read.csv(path, colClasses = c(FI = "character", FI_EJ = "character",
-                                         dept = "character"), check.names = FALSE)
-  }
+  if (ext %in% c("xlsx", "xls"))
+    stop("Format Excel non pris en charge : enregistrer le fichier en CSV (Fichier > Enregistrer sous > CSV).")
+  df <- utils::read.csv(path, colClasses = c(FI = "character", FI_EJ = "character",
+                                             dept = "character"), check.names = FALSE)
   stopifnot(all(c("AN", "FI", "dept") %in% names(df)))
   df$AN   <- as.integer(df$AN)
   df$FI   <- sprintf("%09s", as.character(df$FI))

@@ -1,15 +1,15 @@
 # =====================================================================
-# Contrôle synthétique sur la SAE : appli Shiny locale
-# Moteur : ta spécification (Synth::synth, prédicteur = moyenne pré du
-# résultat, placebos et p-value comme SCtools::mspe.test).
+# Contrôle synthétique sur la SAE : appli Shiny (locale ou en ligne via Shinylive)
+# Moteur : ta spécification (synth() de Synth, copié dans R/synth_vendored.R ;
+# prédicteur = moyenne pré du résultat ; placebos et p-value comme
+# SCtools::mspe.test).
+# Carte : bibliothèque JavaScript Leaflet (www/leaflet, www/carte.js), sans le
+# package R leaflet, pour alléger la version en ligne.
 # Lancement : ouvrir ce fichier dans RStudio puis « Run App ».
 # =====================================================================
 library(shiny)
 library(bslib)
 library(ggplot2)
-library(DT)
-library(leaflet)
-library(shinyWidgets)
 source("R/synth_vendored.R", encoding = "UTF-8")
 source("R/scm_core.R", encoding = "UTF-8")
 source("R/data_prep.R", encoding = "UTF-8")
@@ -28,21 +28,35 @@ SYN    <- "Contrefactuel (contrôle synthétique)"
 
 # Référentiel FINESS : raison sociale, catégorie, coordonnées (WGS84)
 GEO <- utils::read.csv("data/finess_geo.csv", colClasses = c(FI = "character"), encoding = "UTF-8")
-DEPTS <- sf::st_read("data/departements.geojson", quiet = TRUE)   # contours des départements
 
-theme_app <- theme_minimal(base_size = 18) +
-  theme(legend.position = "bottom", legend.text = element_text(size = 16),
-        panel.grid.minor = element_blank(),
-        plot.title = element_text(face = "bold", size = 22, hjust = 0.5),
-        plot.subtitle = element_text(size = 17, hjust = 0.5, margin = margin(b = 12)),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 17))
+# Thème des graphiques, adapté à la largeur affichée (w, en pixels)
+taille_txt <- function(w) if (w < 500) 15 else if (w < 800) 16 else 18
+theme_app <- function(w) {
+  b <- taille_txt(w)
+  theme_minimal(base_size = b) +
+    theme(legend.position = "bottom", legend.text = element_text(size = b - 2),
+          panel.grid.minor = element_blank(),
+          axis.text = element_text(size = b - 3),
+          # sur écran étroit, une ligne par série pour que la légende ne soit pas coupée
+          legend.direction = if (w < 600) "vertical" else "horizontal")
+}
+# Années affichées sur l'axe des x : toutes si la place le permet, sinon une sur 2, 3...
+# (environ 55 pixels par étiquette)
+annees_axe <- function(years, w) {
+  pas <- max(1, ceiling(length(years) / max(2, floor(w / 60))))
+  years[(years - min(years)) %% pas == 0]
+}
+hauteur_graph <- function(w) if (w < 500) 340 else 520
 
-picker_opts <- function(...) pickerOptions(liveSearch = TRUE, liveSearchPlaceholder = "Rechercher",
-                                           noneResultsText = "Aucun résultat", size = 10, ...)
+# Listes avec recherche (selectize, inclus dans shiny)
+recherche <- function(...) modifyList(list(placeholder = "Rechercher", maxOptions = 5000), list(...))
 
 ui <- page_fluid(
   theme = bs_theme(version = 5, primary = BLEU, "border-radius" = "0.6rem"),
-  tags$head(tags$style(HTML("
+  tags$head(
+    tags$link(rel = "stylesheet", href = "leaflet/leaflet.css"),
+    tags$script(src = "leaflet/leaflet.js"),
+    tags$style(HTML("
     .conteneur {max-width: 1100px; margin: 0 auto; padding: 24px 12px 48px;}
     .entete {display:flex; align-items:center; gap:24px; margin-bottom:20px;}
     .entete img {height: 115px;}
@@ -54,7 +68,19 @@ ui <- page_fluid(
     .card > .nav-underline, .card-header-tabs {border-bottom: 2px solid #b9bec6;}
     .form-switch .form-check-label {white-space: nowrap;}
     .aide-carte {font-size: .9rem; color: #666; margin: 4px 0 8px;}
-    .bootstrap-select .dropdown-toggle {border: 1px solid #ced4da; background: #fff;}
+    #carte {height: 430px; border-radius: .4rem; z-index: 0;}
+    .entete-res {background: #fff; border: 1px solid #d5d8dd; border-radius: .4rem;
+                 padding: 10px 14px; margin: 12px 0 8px; font-size: 1.05rem;}
+    .entete-res div {margin: 2px 0;}
+    .entete-res .lib {color: #2039b9; font-weight: 600;}
+    .entete-res .pval {margin-top: 6px; color: #444;}
+    .tableau {overflow-x: auto;}
+    .selectize-dropdown {z-index: 2000;}
+    @media (max-width: 575px) {
+      .entete img {height: 70px;} .entete h1 {font-size: 1.3rem;} .entete {gap: 14px;}
+      #carte {height: 320px;}
+      .entete-res {font-size: .95rem;}
+    }
     .accordion {margin-bottom: 20px;}
     .accordion-item {background: #f3f4f6; border: 1px solid #d5d8dd;}
     .accordion-button, .accordion-button:not(.collapsed) {
@@ -166,28 +192,28 @@ ui <- page_fluid(
       card_header("Paramètres"),
       card_body(
         layout_columns(col_widths = c(4),
-          fileInput("file", "Données", accept = c(".csv", ".xlsx"),
+          fileInput("file", "Données (CSV)", accept = ".csv",
                     buttonLabel = "Parcourir", placeholder = "SAE par défaut")),
+        # Ordre : niveau, catégorie, raison sociale, unité traitée, année, variable.
+        # Listes courtes en menu natif (selectize = FALSE) : pas de clavier sur téléphone.
         layout_columns(col_widths = c(4, 4, 4),
           radioButtons("level", "Niveau", c("Établissement" = "etab", "Département" = "dept"), inline = TRUE),
-          selectInput("t0", "Première année traitée", choices = NULL),
-          selectInput("outcome", "Variable de résultat", choices = NULL)
+          conditionalPanel("input.level == 'etab'",
+            selectInput("cat", "Catégorie", choices = TOUTES, selectize = FALSE)),
+          conditionalPanel("input.level == 'etab'",
+            selectizeInput("rs", "Raison sociale", choices = NULL, options = recherche()))
         ),
         layout_columns(col_widths = c(4, 4, 4),
-          conditionalPanel("input.level == 'etab'",
-            pickerInput("cat", "Catégorie", choices = TOUTES, options = picker_opts())),
-          conditionalPanel("input.level == 'etab'",
-            pickerInput("rs", "Raison sociale", choices = NULL, options = picker_opts())),
-          pickerInput("treated", "Unité traitée", choices = NULL, options = picker_opts())
+          selectizeInput("treated", "Unité traitée", choices = NULL, options = recherche()),
+          selectInput("t0", "Première année traitée", choices = NULL, selectize = FALSE),
+          selectInput("outcome", "Variable de résultat", choices = NULL, selectize = FALSE)
         ),
-        div(class = "aide-carte", "Cliquer sur la carte pour choisir l'unité traitée ; molette ou boutons +/− pour zoomer."),
-        leafletOutput("map", height = 430),
+        div(class = "aide-carte", "Cliquer sur la carte pour choisir l'unité traitée ; molette, pincement ou boutons +/− pour zoomer."),
+        div(id = "carte"),
         br(),
         layout_columns(col_widths = c(4, 8),
-          pickerInput("excl", "Donneurs à exclure", choices = NULL, multiple = TRUE,
-                      options = picker_opts(actionsBox = TRUE, selectAllText = "Tout", deselectAllText = "Aucun",
-                                            noneSelectedText = "Aucun", selectedTextFormat = "count > 3",
-                                            countSelectedText = "{0} donneurs exclus")),
+          selectizeInput("excl", "Donneurs à exclure", choices = NULL, multiple = TRUE,
+                         options = recherche(placeholder = "Aucun", plugins = list("remove_button"))),
           conditionalPanel("input.level == 'etab'",
             div(style = "padding-top: 30px;",
               checkboxInput("same_cat", "Comparer seulement à des établissements de la même catégorie (ex. un CHR avec d'autres CHR)", FALSE)))
@@ -198,19 +224,28 @@ ui <- page_fluid(
     actionButton("run", "Lancer", class = "btn-primary btn-lg w-100 mb-3"),
 
     # 3. Résultats
-    navset_card_underline(
-      nav_panel("Résultat", div(
-        uiOutput("alerts"),
-        input_switch("show_synth", "Afficher le contrefactuel", FALSE),
-        input_switch("y0", "Axe des y à partir de 0", TRUE),
-        plotOutput("p_traj", height = 520))),
-      nav_panel("Placebos", plotOutput("p_gap", height = 520)),
-      nav_panel("Poids", div(DTOutput("t_w"))),
-      nav_panel("Data", div(
-        downloadButton("dl", "Télécharger (CSV)", class = "btn-outline-primary mb-3"),
-        DTOutput("t_data"), br(), uiOutput("notes")))
+    card(
+      card_header("Résultats"),
+      card_body(
+        navset_underline(
+          nav_panel("Résultat", div(
+            uiOutput("entete_traj"),
+            uiOutput("alerts"),
+            input_switch("show_synth", "Afficher le contrefactuel", FALSE),
+            input_switch("y0", "Axe des y à partir de 0", TRUE),
+            plotOutput("p_traj", height = "auto"))),
+          nav_panel("Placebos", div(
+            uiOutput("entete_gap"),
+            plotOutput("p_gap", height = "auto"))),
+          nav_panel("Poids", div(class = "tableau", br(), tableOutput("t_w"))),
+          nav_panel("Data", div(br(),
+            downloadButton("dl", "Télécharger (CSV)", class = "btn-outline-primary mb-3"),
+            div(class = "tableau", tableOutput("t_data")), uiOutput("notes")))
+        )
+      )
     )
-  )
+  ),
+  tags$script(src = "carte.js")
 )
 
 server <- function(input, output, session) {
@@ -241,12 +276,14 @@ server <- function(input, output, session) {
   })
   observe({
     cats <- c(TOUTES, sort(unique(etabs()$categ_niv3_lib))); cur <- isolate(input$cat)
-    updatePickerInput(session, "cat", choices = cats, selected = if (!is.null(cur) && cur %in% cats) cur else TOUTES)
+    updateSelectInput(session, "cat", choices = cats, selected = if (!is.null(cur) && cur %in% cats) cur else TOUTES)
   })
 
   unit_choices <- reactive({
     if (input$level == "dept") sort(unique(rv$df$dept)) else filtered()$FI
   })
+  # Libellés affichés dans les listes : « Manche (50) » pour un département
+  avec_noms <- function(ch, level) if (level == "dept") setNames(ch, dept_label(ch)) else ch
 
   # Listes « Unité traitée » et « Raison sociale », mises à jour ensemble
   observe({
@@ -254,10 +291,10 @@ server <- function(input, output, session) {
     sel <- if (!is.null(cur) && cur %in% ch) cur
            else if (input$level == "dept") (if ("50" %in% ch) "50" else ch[1])
            else { e <- filtered(); in50 <- e$FI[e$dept == "50"]; if (length(in50)) in50[1] else ch[1] }
-    updatePickerInput(session, "treated", choices = ch, selected = sel)
+    updateSelectizeInput(session, "treated", choices = avec_noms(ch, input$level), selected = sel)
     if (input$level == "etab") {
       e <- filtered()
-      updatePickerInput(session, "rs", choices = sort(unique(e$rs)), selected = e$rs[match(sel, e$FI)])
+      updateSelectizeInput(session, "rs", choices = sort(unique(e$rs)), selected = e$rs[match(sel, e$FI)])
     }
   })
 
@@ -265,19 +302,19 @@ server <- function(input, output, session) {
   observeEvent(input$treated, {
     if (input$level != "etab") return()
     rs <- etabs()$rs[match(input$treated, etabs()$FI)]
-    if (!is.na(rs) && !identical(rs, input$rs)) updatePickerInput(session, "rs", selected = rs)
+    if (!is.na(rs) && !identical(rs, input$rs)) updateSelectizeInput(session, "rs", selected = rs)
   })
   observeEvent(input$rs, {
-    if (input$level != "etab" || is.null(input$rs)) return()
+    if (input$level != "etab" || is.null(input$rs) || input$rs == "") return()
     e <- filtered()
     if (!identical(e$rs[match(input$treated, e$FI)], input$rs)) {
       fi <- e$FI[e$rs == input$rs][1]
-      if (!is.na(fi)) updatePickerInput(session, "treated", selected = fi)
+      if (!is.na(fi)) updateSelectizeInput(session, "treated", selected = fi)
     }
   })
   observe({
     ch <- if (input$level == "dept") sort(unique(rv$df$dept)) else etabs()$FI
-    updatePickerInput(session, "excl", choices = ch, selected = character(0))
+    updateSelectizeInput(session, "excl", choices = avec_noms(ch, input$level), selected = character(0))
   })
   observe({
     df <- rv$df; yrs <- sort(unique(df$AN)); nv <- numeric_vars(df)
@@ -285,77 +322,45 @@ server <- function(input, output, session) {
     updateSelectInput(session, "outcome", choices = nv, selected = nv[1])
   })
 
-  # ---- Carte ------------------------------------------------------------
-  output$map <- renderLeaflet({
-    leaflet(options = leafletOptions(minZoom = 4, zoomSnap = 0.25, zoomDelta = 0.5)) |>
-      addTiles() |>   # fond OpenStreetMap standard, sans clé d'accès
-      addMapPane("selection", zIndex = 450) |>
-      fitBounds(-5.2, 41.3, 9.6, 51.1)
-  })
-
-  add_depts <- function(m, selected) {
-    s <- DEPTS$code == selected
-    m |> clearGroup("dept") |>
-      addPolygons(data = DEPTS, layerId = ~code, group = "dept",
-                  color = ifelse(s, BLEU, "#7a7f87"), weight = ifelse(s, 2.5, 1),
-                  fillColor = ifelse(s, BLEU, "#ffffff"), fillOpacity = ifelse(s, 0.55, 0.15),
-                  label = ~sprintf("%s · %s", code, nom),
-                  highlightOptions = highlightOptions(weight = 2.5, color = BLEU, bringToFront = TRUE))
-  }
-
+  # ---- Carte (www/carte.js) ----------------------------------------------
   # Points (établissements) ou contours (départements) selon le niveau et les filtres
   observe({
-    m <- leafletProxy("map") |> clearGroup("etab") |> clearGroup("dept")
     if (input$level == "etab") {
       e <- filtered(); e <- e[!is.na(e$lat), ]
-      m |> addCircleMarkers(data = e, lng = ~lon, lat = ~lat, layerId = ~FI, group = "etab",
-                            radius = 5, stroke = TRUE, weight = 1, color = "#5b6068",
-                            fillColor = "#9aa0a8", fillOpacity = 0.7,
-                            label = ~sprintf("%s · %s · %s", FI, rs, categ_niv3_lib))
-      # Recadrage quand le filtre réduit fortement la sélection
+      cadre <- NULL                       # recadrage quand le filtre réduit la sélection
       if (nrow(e) > 0 && nrow(e) < nrow(etabs())) {
         em <- e[e$lat > 41 & e$lat < 52 & e$lon > -6 & e$lon < 10, ]
         if (nrow(em) == 0) em <- e
-        if (nrow(em) == 1) m |> setView(em$lon, em$lat, zoom = 11)
-        else m |> fitBounds(min(em$lon), min(em$lat), max(em$lon), max(em$lat))
+        cadre <- if (nrow(em) == 1) c(em$lat, em$lon)
+                 else list(c(min(em$lat), min(em$lon)), c(max(em$lat), max(em$lon)))
       }
+      session$sendCustomMessage("carte_etabs", list(
+        id = I(e$FI), lat = I(e$lat), lon = I(e$lon),
+        label = I(sprintf("%s · %s · %s", e$FI, e$rs, e$categ_niv3_lib)), cadre = cadre))
+      sel_carte(isolate(input$treated), "etab", recentrer = FALSE)
     } else {
-      m |> clearGroup("sel") |> add_depts(isolate(input$treated)) |> fitBounds(-5.2, 41.3, 9.6, 51.1)
+      session$sendCustomMessage("carte_depts", list(sel = isolate(input$treated)))
     }
   })
 
   # Mise en évidence de l'unité traitée
-  observe({
-    req(input$treated)
-    m <- leafletProxy("map")
-    if (input$level == "etab") {
-      e <- etabs()[etabs()$FI == input$treated, ]
-      m |> clearGroup("sel")
-      if (nrow(e) && !is.na(e$lat)) {
-        m |> addCircleMarkers(lng = e$lon, lat = e$lat, layerId = paste0("sel_", e$FI), group = "sel",
-                              radius = 10, color = "#ffffff", weight = 2, fillColor = BLEU, fillOpacity = 1,
-                              options = pathOptions(pane = "selection"),
-                              label = sprintf("%s · %s (unité traitée)", e$FI, e$rs))
-        # Recentrage seulement sans filtre actif (sinon le recadrage du filtre prime)
-        b <- isolate(input$map_bounds); sans_filtre <- !sel_or_all(isolate(input$cat))
-        if (sans_filtre && !is.null(b) && (e$lat > b$north || e$lat < b$south || e$lon > b$east || e$lon < b$west))
-          m |> setView(e$lon, e$lat, zoom = 9)
-      }
-    } else {
-      add_depts(m, input$treated)
-    }
-  })
+  sel_carte <- function(id, level, recentrer = TRUE) {
+    if (is.null(id) || id == "") return()
+    if (level == "dept") return(session$sendCustomMessage("carte_sel", list(type = "dept", code = id)))
+    e <- etabs()[etabs()$FI == id, ]
+    if (!nrow(e) || is.na(e$lat)) return(session$sendCustomMessage("carte_sel", list(type = "etab", lat = NULL)))
+    session$sendCustomMessage("carte_sel", list(
+      type = "etab", lat = e$lat, lon = e$lon,
+      label = sprintf("%s · %s (unité traitée)", e$FI, e$rs),
+      # recentrage seulement sans filtre actif (sinon le recadrage du filtre prime)
+      recentrer = recentrer && !sel_or_all(isolate(input$cat))))
+  }
+  observeEvent(input$treated, sel_carte(input$treated, isolate(input$level)))
 
   # Clic sur la carte = choix de l'unité traitée
-  observeEvent(input$map_marker_click, {
-    id <- sub("^sel_", "", input$map_marker_click$id)
-    if (input$level == "etab" && id %in% unit_choices())
-      updatePickerInput(session, "treated", selected = id)
-  })
-  observeEvent(input$map_shape_click, {
-    code <- input$map_shape_click$id
-    if (input$level == "dept" && !is.null(code) && code %in% unit_choices())
-      updatePickerInput(session, "treated", selected = code)
+  observeEvent(input$carte_clic, {
+    id <- input$carte_clic
+    if (id %in% unit_choices()) updateSelectizeInput(session, "treated", selected = id)
   })
 
   # ---- Estimation ---------------------------------------------------------
@@ -393,52 +398,68 @@ server <- function(input, output, session) {
 
   vline <- function(r) geom_vline(xintercept = r$p$t0 - 1, linetype = "dashed", colour = "grey55")
   nom_unite <- function(r) {
-    if (r$level == "dept") return(paste("département", r$fit$treated))  # ex. « département 50 »
-    rs <- GEO$rs[match(r$fit$treated, GEO$FI)]
-    if (is.na(rs)) r$fit$treated else sprintf("%s (%s)", r$fit$treated, rs)
+    if (r$level == "dept") return(dept_label(r$fit$treated))   # ex. « Manche (50) »
+    r$fit$treated
   }
+  largeur <- function(id) { w <- session$clientData[[paste0("output_", id, "_width")]]
+                            if (is.null(w) || w == 0) 800 else w }
+
+  # Encadré au-dessus des graphiques : variable, raison sociale, unité traitée
+  entete <- function(r, extra = NULL) {
+    ligne <- function(lib, val) div(span(class = "lib", paste0(lib, " : ")), val)
+    rs <- if (r$level == "etab") GEO$rs[match(r$fit$treated, GEO$FI)] else NA
+    div(class = "entete-res",
+        ligne("Outcome", r$outcome),
+        if (!is.na(rs)) ligne("Raison sociale", rs),
+        ligne("Unité traitée", nom_unite(r)),
+        extra)
+  }
+  output$entete_traj <- renderUI({ req(input$run > 0); r <- req(res()); entete(r) })
+  output$entete_gap <- renderUI({
+    req(input$run > 0); r <- req(res())
+    entete(r, div(class = "pval",
+      sprintf("p-value = %.3f (rang %d sur %d, %d placebo(s) extrême(s) exclu(s)) ; sans exclusion : %.3f",
+              r$pv_disc$p, r$pv_disc$rang, r$pv_disc$n, r$pv_disc$exclus, r$pv_all$p),
+      br(), "Unité traitée en bleu, placebos en gris."))
+  })
 
   output$p_traj <- renderPlot({
-    attente(); r <- req(res()); f <- r$fit
+    attente(); r <- req(res()); f <- r$fit; w <- largeur("p_traj")
     d <- data.frame(year = f$years, val = f$y, serie = "Unité traitée")
     if (isTRUE(input$show_synth)) d <- rbind(d, data.frame(year = f$years, val = f$synth, serie = SYN))
     d$serie <- factor(d$serie, intersect(c("Unité traitée", SYN), d$serie))
     ggplot(d, aes(year, val, colour = serie, linetype = serie)) + vline(r) +
-      geom_line(linewidth = 1.3) +
+      geom_line(linewidth = if (w < 500) 1 else 1.3) +
       scale_colour_manual(values = setNames(c(BLEU, NOIR), c("Unité traitée", SYN)), name = NULL) +
       scale_linetype_manual(values = setNames(c("solid", "42"), c("Unité traitée", SYN)), name = NULL) +
       (if (isTRUE(input$y0)) expand_limits(y = 0) else NULL) +
-      scale_x_continuous(breaks = f$years) +
-      labs(title = sprintf("Outcome : %s", r$outcome),
-           subtitle = sprintf("Unité traitée : %s", nom_unite(r)),
-           x = NULL, y = NULL) + theme_app
-  })
+      scale_x_continuous(breaks = annees_axe(f$years, w)) +
+      labs(x = NULL, y = NULL) + theme_app(w)
+  }, height = function() hauteur_graph(largeur("p_traj")))
 
   output$p_gap <- renderPlot({
-    attente(); r <- req(res()); f <- r$fit
+    attente(); r <- req(res()); f <- r$fit; w <- largeur("p_gap")
     pl <- r$pl[vapply(r$pl, function(x) x$mspe_pre / f$mspe_pre < MSPE_LIMIT, logical(1))]
     g <- ggplot() + vline(r) + geom_hline(yintercept = 0, colour = "grey55")
     if (length(pl)) {
       dp <- do.call(rbind, lapply(names(pl), function(j) data.frame(year = f$years, gap = pl[[j]]$gap, u = j)))
       g <- g + geom_line(data = dp, aes(year, gap, group = u), colour = GRIS, linewidth = 0.5)
     }
-    g + geom_line(data = data.frame(year = f$years, gap = f$gap), aes(year, gap), colour = BLEU, linewidth = 1.4) +
-      scale_x_continuous(breaks = f$years) +
-      labs(title = sprintf("Écart traité moins synthétique : %s", r$outcome),
-           subtitle = sprintf("Unité traitée en bleu, placebos en gris\np-value = %.3f (rang %d sur %d, %d placebo(s) extrême(s) exclu(s)) ; sans exclusion : %.3f",
-                              r$pv_disc$p, r$pv_disc$rang, r$pv_disc$n, r$pv_disc$exclus, r$pv_all$p),
-           x = NULL, y = NULL) + theme_app
-  })
+    g + geom_line(data = data.frame(year = f$years, gap = f$gap), aes(year, gap), colour = BLEU,
+                  linewidth = if (w < 500) 1.1 else 1.4) +
+      scale_x_continuous(breaks = annees_axe(f$years, w)) +
+      labs(x = NULL, y = NULL) + theme_app(w)
+  }, height = function() hauteur_graph(largeur("p_gap")))
 
-  output$t_w <- renderDT({
+  output$t_w <- renderTable({
     attente(); r <- req(res()); w <- r$fit$w; w <- sort(w[w > 0.001], decreasing = TRUE)
-    d <- data.frame(unite = names(w), poids = round(w, 3))
+    d <- data.frame(Unité = names(w), Poids = round(w, 3))
     if (r$level == "etab") {
-      e <- etabs()[match(d$unite, etabs()$FI), ]
-      d$raison_sociale <- e$rs; d$categorie <- e$categ_niv3_lib; d$departement <- e$dept
-    }
-    datatable(d, rownames = FALSE, options = list(pageLength = 15, dom = "tp"))
-  })
+      e <- etabs()[match(d$Unité, etabs()$FI), ]
+      d$`Raison sociale` <- e$rs; d$Catégorie <- e$categ_niv3_lib; d$Département <- e$dept
+    } else d$Unité <- dept_label(d$Unité)
+    d
+  }, striped = TRUE, hover = TRUE, digits = 3)
 
   serie_data <- reactive({
     r <- req(res()); f <- r$fit
@@ -446,10 +467,11 @@ server <- function(input, output, session) {
                traite = round(f$y, 3), synthetique = round(f$synth, 3), ecart = round(f$gap, 3))
   })
 
-  output$t_data <- renderDT({
-    attente()
-    datatable(serie_data(), rownames = FALSE, options = list(pageLength = 20, dom = "t"))
-  })
+  output$t_data <- renderTable({
+    attente(); d <- serie_data()
+    names(d) <- c("Année", "Période", "Traité", "Synthétique", "Écart")
+    d
+  }, striped = TRUE, hover = TRUE, digits = 3)
 
   output$dl <- downloadHandler(
     filename = function() { r <- res(); sprintf("scm_%s_%s_%d.csv", r$fit$treated, r$outcome, r$p$t0) },
