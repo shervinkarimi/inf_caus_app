@@ -234,8 +234,8 @@ ui <- page_fluid(
           nav_panel("Résultat", div(
             uiOutput("entete_traj"),
             uiOutput("alerts"),
-            input_switch("show_synth", "Afficher le contrefactuel", FALSE),
-            input_switch("y0", "Axe des y à partir de 0", TRUE),
+            input_switch("show_synth", "Afficher le contrefactuel", TRUE),
+            input_switch("y0", "Axe des y à partir de 0", FALSE),
             plotOutput("p_traj", height = "auto"))),
           nav_panel("Placebos", div(
             uiOutput("entete_gap"),
