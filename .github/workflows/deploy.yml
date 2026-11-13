@@ -37,12 +37,7 @@ jobs:
             any::shiny
             any::bslib
             any::ggplot2
-            any::DT
-            any::leaflet
-            any::shinyWidgets
-            any::sf
             any::quadprog
-            any::readxl
 
       - name: Construire le site
         shell: Rscript {0}
