@@ -9,7 +9,6 @@
 # =====================================================================
 library(shiny)
 library(bslib)
-library(ggplot2)
 source("R/synth_vendored.R", encoding = "UTF-8")
 source("R/scm_core.R", encoding = "UTF-8")
 source("R/data_prep.R", encoding = "UTF-8")
@@ -29,22 +28,26 @@ SYN    <- "Contrefactuel (contrôle synthétique)"
 # Référentiel FINESS : raison sociale, catégorie, coordonnées (WGS84)
 GEO <- utils::read.csv("data/finess_geo.csv", colClasses = c(FI = "character"), encoding = "UTF-8")
 
-# Thème des graphiques, adapté à la largeur affichée (w, en pixels)
-taille_txt <- function(w) if (w < 500) 15 else if (w < 800) 16 else 18
-theme_app <- function(w) {
-  b <- taille_txt(w)
-  theme_minimal(base_size = b) +
-    theme(legend.position = "bottom", legend.text = element_text(size = b - 2),
-          panel.grid.minor = element_blank(),
-          axis.text = element_text(size = b - 3),
-          # sur écran étroit, une ligne par série pour que la légende ne soit pas coupée
-          legend.direction = if (w < 600) "vertical" else "horizontal")
-}
+# ---- Graphiques en R de base (sans ggplot2, pour alléger la version en ligne) ----
+# w = largeur affichée en pixels ; le texte et l'axe des x s'adaptent.
+taille_txt <- function(w) if (w < 500) 0.9 else if (w < 800) 1 else 1.1
 # Années affichées sur l'axe des x : toutes si la place le permet, sinon une sur 2, 3...
-# (environ 55 pixels par étiquette)
+# (environ 60 pixels par étiquette)
 annees_axe <- function(years, w) {
   pas <- max(1, ceiling(length(years) / max(2, floor(w / 60))))
   years[(years - min(years)) %% pas == 0]
+}
+# Cadre commun : fond, grille légère, axes, ligne pointillée avant la première année traitée
+cadre_graph <- function(years, ylim, w, t0) {
+  cx <- taille_txt(w)
+  par(mar = c(2.6, 3.6, 1, 1), cex = cx, family = "sans", las = 1, mgp = c(3, 0.6, 0), tcl = 0)
+  plot(NA, xlim = range(years), ylim = ylim, xlab = "", ylab = "", axes = FALSE)
+  xb <- annees_axe(years, w); yb <- pretty(ylim)
+  abline(h = yb, v = xb, col = "#ebebeb", lwd = 1)
+  axis(1, at = xb, labels = xb, lwd = 0, cex.axis = 0.85, col.axis = "#4d4d4d")
+  axis(2, at = yb, labels = format(yb, big.mark = " ", scientific = FALSE, trim = TRUE),
+       lwd = 0, cex.axis = 0.85, col.axis = "#4d4d4d")
+  abline(v = t0 - 1, lty = 2, col = "grey55")
 }
 hauteur_graph <- function(w) if (w < 500) 340 else 520
 
@@ -396,7 +399,6 @@ server <- function(input, output, session) {
     lapply(r$diag, function(m) div(class = "alert alert-warning py-2 mb-2", m))
   })
 
-  vline <- function(r) geom_vline(xintercept = r$p$t0 - 1, linetype = "dashed", colour = "grey55")
   nom_unite <- function(r) {
     if (r$level == "dept") return(dept_label(r$fit$treated))   # ex. « Manche (50) »
     r$fit$treated
@@ -425,31 +427,31 @@ server <- function(input, output, session) {
 
   output$p_traj <- renderPlot({
     attente(); r <- req(res()); f <- r$fit; w <- largeur("p_traj")
-    d <- data.frame(year = f$years, val = f$y, serie = "Unité traitée")
-    if (isTRUE(input$show_synth)) d <- rbind(d, data.frame(year = f$years, val = f$synth, serie = SYN))
-    d$serie <- factor(d$serie, intersect(c("Unité traitée", SYN), d$serie))
-    ggplot(d, aes(year, val, colour = serie, linetype = serie)) + vline(r) +
-      geom_line(linewidth = if (w < 500) 1 else 1.3) +
-      scale_colour_manual(values = setNames(c(BLEU, NOIR), c("Unité traitée", SYN)), name = NULL) +
-      scale_linetype_manual(values = setNames(c("solid", "42"), c("Unité traitée", SYN)), name = NULL) +
-      (if (isTRUE(input$y0)) expand_limits(y = 0) else NULL) +
-      scale_x_continuous(breaks = annees_axe(f$years, w)) +
-      labs(x = NULL, y = NULL) + theme_app(w)
-  }, height = function() hauteur_graph(largeur("p_traj")))
+    synth <- isTRUE(input$show_synth)
+    yr <- range(c(f$y, if (synth) f$synth), na.rm = TRUE)
+    if (isTRUE(input$y0)) yr <- range(c(0, yr))
+    lay <- if (synth) 2 else 1                     # légende : 1 ou 2 entrées
+    etroit <- w < 600
+    layout(matrix(1:2), heights = c(1, if (etroit) 0.11 * lay + 0.04 else 0.1))
+    cadre_graph(f$years, yr, w, r$p$t0)
+    lw <- if (w < 500) 2.2 else 3
+    if (synth) lines(f$years, f$synth, col = NOIR, lwd = lw, lty = "42")
+    lines(f$years, f$y, col = BLEU, lwd = lw)
+    par(mar = c(0, 0, 0, 0)); plot.new()
+    legend("center", legend = c("Unité traitée", if (synth) SYN), col = c(BLEU, if (synth) NOIR),
+           lty = c("solid", if (synth) "42"), lwd = lw, bty = "n", seg.len = 2.5,
+           horiz = !etroit, cex = (if (etroit) 1 else 0.9) * taille_txt(w), text.col = "#333333", x.intersp = 0.6, text.width = NA)
+  }, height = function() hauteur_graph(largeur("p_traj")), res = 96)
 
   output$p_gap <- renderPlot({
     attente(); r <- req(res()); f <- r$fit; w <- largeur("p_gap")
     pl <- r$pl[vapply(r$pl, function(x) x$mspe_pre / f$mspe_pre < MSPE_LIMIT, logical(1))]
-    g <- ggplot() + vline(r) + geom_hline(yintercept = 0, colour = "grey55")
-    if (length(pl)) {
-      dp <- do.call(rbind, lapply(names(pl), function(j) data.frame(year = f$years, gap = pl[[j]]$gap, u = j)))
-      g <- g + geom_line(data = dp, aes(year, gap, group = u), colour = GRIS, linewidth = 0.5)
-    }
-    g + geom_line(data = data.frame(year = f$years, gap = f$gap), aes(year, gap), colour = BLEU,
-                  linewidth = if (w < 500) 1.1 else 1.4) +
-      scale_x_continuous(breaks = annees_axe(f$years, w)) +
-      labs(x = NULL, y = NULL) + theme_app(w)
-  }, height = function() hauteur_graph(largeur("p_gap")))
+    gaps <- c(f$gap, unlist(lapply(pl, `[[`, "gap")))
+    cadre_graph(f$years, range(c(0, gaps), na.rm = TRUE), w, r$p$t0)
+    abline(h = 0, col = "grey55")
+    for (x in pl) lines(f$years, x$gap, col = GRIS, lwd = 1)
+    lines(f$years, f$gap, col = BLEU, lwd = if (w < 500) 2.4 else 3.2)
+  }, height = function() hauteur_graph(largeur("p_gap")), res = 96)
 
   output$t_w <- renderTable({
     attente(); r <- req(res()); w <- r$fit$w; w <- sort(w[w > 0.001], decreasing = TRUE)
