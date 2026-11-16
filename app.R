@@ -25,6 +25,16 @@ VERT  <- "#00aa3c"     # vert EHESP (en-têtes des encadrés)
 TOUTES <- "(toutes)"
 SYN    <- "Contrefactuel (contrôle synthétique)"
 
+# Libellés affichés pour les variables de résultat (le code reste utilisé en interne)
+LIBELLES <- c(
+  LIT_MCO  = "Lits MCO",
+  PLA_MCO  = "Lits MCO (hosp. partielle)",
+  PLAN_MCO = "Lits MCO (hosp. partielle de nuit)",
+  ETP_TOT  = "ETP",
+  ETP_URG  = "ETP urgences"
+)
+libelle_var <- function(v) ifelse(v %in% names(LIBELLES), LIBELLES[v], v)
+
 # Référentiel FINESS : raison sociale, catégorie, coordonnées (WGS84)
 GEO <- utils::read.csv("data/finess_geo.csv", colClasses = c(FI = "character"), encoding = "UTF-8")
 
@@ -69,6 +79,10 @@ ui <- page_fluid(
     .card .card-header {color: #00aa3c !important; font-size: 1.35rem !important; font-weight: 600;
                   background: #f3f4f6; border-bottom: 2px solid #b9bec6;}
     .card > .nav-underline, .card-header-tabs {border-bottom: 2px solid #b9bec6;}
+    .card.enonce {background: #eef1fb; border: 2px solid #2039b9;
+              box-shadow: 0 4px 12px rgba(32, 57, 185, 0.18);}
+.card.enonce .card-header {color: #ffffff !important; background: #2039b9;
+                           border-bottom: none;}
     .form-switch .form-check-label {white-space: nowrap;}
     .aide-carte {font-size: .9rem; color: #666; margin: 4px 0 8px;}
     #carte {height: 430px; border-radius: .4rem; z-index: 0;}
@@ -78,6 +92,11 @@ ui <- page_fluid(
     .entete-res .lib {color: #2039b9; font-weight: 600;}
     .entete-res .pval {margin-top: 6px; color: #444;}
     .tableau {overflow-x: auto;}
+    .resume {margin-top: 12px;}
+    .resume table {background: #fff; margin-bottom: 0;}
+    .resume td, .resume th {text-align: right;}
+    .resume td:first-child, .resume th:first-child {text-align: left;}
+    .resume .att {font-weight: 600; color: #2039b9;}
     .selectize-dropdown {z-index: 2000;}
     @media (max-width: 575px) {
       .entete img {height: 70px;} .entete h1 {font-size: 1.3rem;} .entete {gap: 14px;}
@@ -100,38 +119,45 @@ ui <- page_fluid(
       # Titre
     div(class = "entete",
       tags$img(src = "logo_ehesp.svg", alt = "EHESP"),
-      div(h1("Outil : Inférence Causale"),
+      div(h1("Exercice : Inférence causale"),
           p("Évaluer l'effet d'une intervention"))),
     
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # 
-    accordion(
-      open = FALSE,                      # fermé au démarrage ; TRUE pour l'ouvrir
-      accordion_panel(
-        "Etapes de l'évaluation",
-        
-        tags$ol(
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle question veut-on résoudre ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles données ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle stratégie empirique ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quels sont les résultats ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles recommandations ?"))
-        ),
-        p("Les étapes 1. et 2. sont déjà définies pour cette exercice."),
-        p("Voir cours ", tags$b("Inférence causale"), " pour plus de détail.")
-      )
-    ),
+    # accordion(
+    #   open = FALSE,                      # fermé au démarrage ; TRUE pour l'ouvrir
+    #   accordion_panel(
+    #     "Étapes de l'évaluation",
+    #     
+    #     tags$ol(
+    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle question veut-on résoudre ?")),
+    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles données ?")),
+    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle stratégie empirique ?")),
+    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quels sont les résultats ?")),
+    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles recommandations ?"))
+    #     ),
+    #     p("Les étapes 1. et 2. sont déjà définies pour cet exercice."),
+    #     p("Voir cours ", tags$b("Inférence causale"), " pour plus de détails.")
+    #   )
+    # ),
     
     
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # 
     card(
-      card_header("Question de recherche"),
+      class = "enonce",
+      card_header("Énoncé"),
       card_body(
-        p("Utilisez l'application ci-dessous pour évaluer l'impact d'un choc ", tags$i("X"),"sur une variable ", tags$i("Y"),
-          ", en utilisant l'approche ", tags$i("synthetic control.")
-          )
-        
+        p("Les départements suivants ont mis en place une réorganisation hospitalière en 2018 : la Creuse, la Loire-Atlantique et l'Ille-et-Vilaine."),
+        p("Pour chacun de ces départements, évaluez l'impact sur le nombre de lits et répondez aux questions suivantes :"),
+        tags$ol(
+          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle est votre question de recherche ?")),
+          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quel est l'effet moyen de traitement (ATT) ? Quel est l'équivalent en pourcentage ?")),
+          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle est la p-value ? L'effet est-il significatif ?")),
+          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "L'hypothèse des tendances parallèles est-elle crédible ? Quelles sont les autres limites de l'étude ?")),
+          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles sont les pistes d'approfondissement ?")),
+          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles sont vos recommandations ?"))
+        )
       )
     ),
 
@@ -179,7 +205,7 @@ ui <- page_fluid(
         ),
         p(
           strong("Estimation de l'effet : "),
-          "L'effet du choc est mesuré par l'écart entre l'unité traitée et celle de son contrôle synthétique après le choc."
+          "L'effet du choc est mesuré par l'écart entre l'unité traitée et son contrôle synthétique après le choc."
         ),
         p(
           strong("Référence : "),
@@ -202,7 +228,8 @@ ui <- page_fluid(
         layout_columns(col_widths = c(4, 4, 4),
           radioButtons("level", "Niveau", c("Établissement" = "etab", "Département" = "dept"), inline = TRUE),
           conditionalPanel("input.level == 'etab'",
-            selectInput("cat", "Catégorie", choices = TOUTES, selectize = FALSE)),
+            selectizeInput("cat", "Catégories", choices = NULL, multiple = TRUE,
+                           options = recherche(placeholder = TOUTES, plugins = list("remove_button")))),
           conditionalPanel("input.level == 'etab'",
             selectizeInput("rs", "Raison sociale", choices = NULL, options = recherche()))
         ),
@@ -235,8 +262,9 @@ ui <- page_fluid(
             uiOutput("entete_traj"),
             uiOutput("alerts"),
             input_switch("show_synth", "Afficher le contrefactuel", TRUE),
-            input_switch("y0", "Axe des y à partir de 0", FALSE),
-            plotOutput("p_traj", height = "auto"))),
+            input_switch("y0", "Axe des y à partir de 0", TRUE),
+            plotOutput("p_traj", height = "auto"),
+            uiOutput("resume_traj"))),
           nav_panel("Placebos", div(
             uiOutput("entete_gap"),
             plotOutput("p_gap", height = "auto"))),
@@ -271,15 +299,16 @@ server <- function(input, output, session) {
   })
 
   # ---- Filtre catégorie : réduit raisons sociales, FI et carte ------------
-  sel_or_all <- function(x) !is.null(x) && x != TOUTES
+  # Sélection multiple ; aucune catégorie choisie = toutes les catégories
+  sel_or_all <- function(x) length(x) > 0
   filtered <- reactive({
     e <- etabs()
-    if (sel_or_all(input$cat)) e <- e[e$categ_niv3_lib == input$cat, ]
+    if (sel_or_all(input$cat)) e <- e[e$categ_niv3_lib %in% input$cat, ]
     e
   })
   observe({
-    cats <- c(TOUTES, sort(unique(etabs()$categ_niv3_lib))); cur <- isolate(input$cat)
-    updateSelectInput(session, "cat", choices = cats, selected = if (!is.null(cur) && cur %in% cats) cur else TOUTES)
+    cats <- sort(unique(etabs()$categ_niv3_lib)); cur <- isolate(input$cat)
+    updateSelectizeInput(session, "cat", choices = cats, selected = intersect(cur, cats))
   })
 
   unit_choices <- reactive({
@@ -288,16 +317,24 @@ server <- function(input, output, session) {
   # Libellés affichés dans les listes : « Manche (50) » pour un département
   avec_noms <- function(ch, level) if (level == "dept") setNames(ch, dept_label(ch)) else ch
 
+  # Listes longues en mode serveur (server = TRUE) : le navigateur ne reçoit que
+  # les options correspondant à la recherche. En contrepartie, chaque mise à jour
+  # de la sélection doit renvoyer la liste complète des choix.
+  maj_treated <- function(sel) updateSelectizeInput(session, "treated",
+    choices = avec_noms(unit_choices(), input$level), selected = sel, server = TRUE)
+  maj_rs <- function(sel) updateSelectizeInput(session, "rs",
+    choices = sort(unique(filtered()$rs)), selected = sel, server = TRUE)
+
   # Listes « Unité traitée » et « Raison sociale », mises à jour ensemble
   observe({
     ch <- unit_choices(); cur <- isolate(input$treated)
     sel <- if (!is.null(cur) && cur %in% ch) cur
            else if (input$level == "dept") (if ("50" %in% ch) "50" else ch[1])
            else { e <- filtered(); in50 <- e$FI[e$dept == "50"]; if (length(in50)) in50[1] else ch[1] }
-    updateSelectizeInput(session, "treated", choices = avec_noms(ch, input$level), selected = sel)
+    maj_treated(sel)
     if (input$level == "etab") {
       e <- filtered()
-      updateSelectizeInput(session, "rs", choices = sort(unique(e$rs)), selected = e$rs[match(sel, e$FI)])
+      maj_rs(e$rs[match(sel, e$FI)])
     }
   })
 
@@ -305,24 +342,26 @@ server <- function(input, output, session) {
   observeEvent(input$treated, {
     if (input$level != "etab") return()
     rs <- etabs()$rs[match(input$treated, etabs()$FI)]
-    if (!is.na(rs) && !identical(rs, input$rs)) updateSelectizeInput(session, "rs", selected = rs)
+    if (!is.na(rs) && !identical(rs, input$rs)) maj_rs(rs)
   })
   observeEvent(input$rs, {
     if (input$level != "etab" || is.null(input$rs) || input$rs == "") return()
     e <- filtered()
     if (!identical(e$rs[match(input$treated, e$FI)], input$rs)) {
       fi <- e$FI[e$rs == input$rs][1]
-      if (!is.na(fi)) updateSelectizeInput(session, "treated", selected = fi)
+      if (!is.na(fi)) maj_treated(fi)
     }
   })
   observe({
     ch <- if (input$level == "dept") sort(unique(rv$df$dept)) else etabs()$FI
-    updateSelectizeInput(session, "excl", choices = avec_noms(ch, input$level), selected = character(0))
+    updateSelectizeInput(session, "excl", choices = avec_noms(ch, input$level),
+                         selected = character(0), server = TRUE)
   })
   observe({
     df <- rv$df; yrs <- sort(unique(df$AN)); nv <- numeric_vars(df)
     updateSelectInput(session, "t0", choices = yrs[-(1:2)], selected = yrs[ceiling(length(yrs) * 0.6)])
-    updateSelectInput(session, "outcome", choices = nv, selected = nv[1])
+    updateSelectInput(session, "outcome", choices = setNames(nv, libelle_var(nv)),
+                      selected = if ("LIT_MCO" %in% nv) "LIT_MCO" else nv[1])
   })
 
   # ---- Carte (www/carte.js) ----------------------------------------------
@@ -363,7 +402,7 @@ server <- function(input, output, session) {
   # Clic sur la carte = choix de l'unité traitée
   observeEvent(input$carte_clic, {
     id <- input$carte_clic
-    if (id %in% unit_choices()) updateSelectizeInput(session, "treated", selected = id)
+    if (id %in% unit_choices()) maj_treated(id)
   })
 
   # ---- Estimation ---------------------------------------------------------
@@ -411,7 +450,7 @@ server <- function(input, output, session) {
     ligne <- function(lib, val) div(span(class = "lib", paste0(lib, " : ")), val)
     rs <- if (r$level == "etab") GEO$rs[match(r$fit$treated, GEO$FI)] else NA
     div(class = "entete-res",
-        ligne("Outcome", r$outcome),
+        ligne("Outcome", libelle_var(r$outcome)),
         if (!is.na(rs)) ligne("Raison sociale", rs),
         ligne("Unité traitée", nom_unite(r)),
         extra)
@@ -442,6 +481,30 @@ server <- function(input, output, session) {
            lty = c("solid", if (synth) "42"), lwd = lw, bty = "n", seg.len = 2.5,
            horiz = !etroit, cex = (if (etroit) 1 else 0.9) * taille_txt(w), text.col = "#333333", x.intersp = 0.6, text.width = NA)
   }, height = function() hauteur_graph(largeur("p_traj")), res = 96)
+
+  # Moyennes avant / après sous le graphique ; ATT = écart moyen après traitement
+  output$resume_traj <- renderUI({
+    req(input$run > 0); r <- req(res()); f <- r$fit
+    avant <- f$years < r$p$t0; apres <- !avant
+    moy <- function(x, idx) mean(x[idx], na.rm = TRUE)
+    num <- function(x) format(round(x, 2), big.mark = " ", nsmall = 2, trim = TRUE)
+    ligne <- function(lib, x, cl = NULL) tags$tr(class = cl,
+      tags$td(lib), tags$td(num(moy(x, avant))), tags$td(num(moy(x, apres))),
+      tags$td(num(moy(x, apres) - moy(x, avant))))
+    div(class = "resume tableau",
+      tags$table(class = "table table-sm",
+        tags$thead(tags$tr(
+          tags$th(""),
+          tags$th(sprintf("Moyenne avant (%d–%d)", min(f$years[avant]), max(f$years[avant]))),
+          tags$th(sprintf("Moyenne après (%d–%d)", min(f$years[apres]), max(f$years[apres]))),
+          tags$th("Après − avant"))),
+        tags$tbody(
+          ligne("Unité traitée", f$y),
+          ligne("Contrôle synthétique", f$synth),
+          ligne("Écart (traitée − synthétique)", f$gap))),
+      div(class = "att", style = "margin-top: 8px;",
+        sprintf("Effet moyen du traitement (ATT) : %s", num(moy(f$gap, apres)))))
+  })
 
   output$p_gap <- renderPlot({
     attente(); r <- req(res()); f <- r$fit; w <- largeur("p_gap")
