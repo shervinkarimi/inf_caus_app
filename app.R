@@ -96,7 +96,6 @@ ui <- page_fluid(
     .resume table {background: #fff; margin-bottom: 0;}
     .resume td, .resume th {text-align: right;}
     .resume td:first-child, .resume th:first-child {text-align: left;}
-    .resume .att {font-weight: 600; color: #2039b9;}
     .selectize-dropdown {z-index: 2000;}
     @media (max-width: 575px) {
       .entete img {height: 70px;} .entete h1 {font-size: 1.3rem;} .entete {gap: 14px;}
@@ -271,7 +270,7 @@ ui <- page_fluid(
           nav_panel("Poids", div(class = "tableau", br(), tableOutput("t_w"))),
           nav_panel("Data", div(br(),
             downloadButton("dl", "Télécharger (CSV)", class = "btn-outline-primary mb-3"),
-            div(class = "tableau", tableOutput("t_data")), uiOutput("notes")))
+            div(class = "tableau", tableOutput("t_data"))))
         )
       )
     )
@@ -482,28 +481,23 @@ server <- function(input, output, session) {
            horiz = !etroit, cex = (if (etroit) 1 else 0.9) * taille_txt(w), text.col = "#333333", x.intersp = 0.6, text.width = NA)
   }, height = function() hauteur_graph(largeur("p_traj")), res = 96)
 
-  # Moyennes avant / après sous le graphique ; ATT = écart moyen après traitement
+  # Moyennes avant / après sous le graphique, pour le traité et le contrôle synthétique
   output$resume_traj <- renderUI({
     req(input$run > 0); r <- req(res()); f <- r$fit
     avant <- f$years < r$p$t0; apres <- !avant
     moy <- function(x, idx) mean(x[idx], na.rm = TRUE)
     num <- function(x) format(round(x, 2), big.mark = " ", nsmall = 2, trim = TRUE)
-    ligne <- function(lib, x, cl = NULL) tags$tr(class = cl,
-      tags$td(lib), tags$td(num(moy(x, avant))), tags$td(num(moy(x, apres))),
-      tags$td(num(moy(x, apres) - moy(x, avant))))
+    ligne <- function(lib, x) tags$tr(
+      tags$td(lib), tags$td(num(moy(x, avant))), tags$td(num(moy(x, apres))))
     div(class = "resume tableau",
       tags$table(class = "table table-sm",
         tags$thead(tags$tr(
           tags$th(""),
           tags$th(sprintf("Moyenne avant (%d–%d)", min(f$years[avant]), max(f$years[avant]))),
-          tags$th(sprintf("Moyenne après (%d–%d)", min(f$years[apres]), max(f$years[apres]))),
-          tags$th("Après − avant"))),
+          tags$th(sprintf("Moyenne après (%d–%d)", min(f$years[apres]), max(f$years[apres]))))),
         tags$tbody(
           ligne("Unité traitée", f$y),
-          ligne("Contrôle synthétique", f$synth),
-          ligne("Écart (traitée − synthétique)", f$gap))),
-      div(class = "att", style = "margin-top: 8px;",
-        sprintf("Effet moyen du traitement (ATT) : %s", num(moy(f$gap, apres)))))
+          ligne("Contrôle synthétique", f$synth))))
   })
 
   output$p_gap <- renderPlot({
@@ -543,10 +537,6 @@ server <- function(input, output, session) {
     content = function(file) utils::write.csv(serie_data(), file, row.names = FALSE)
   )
 
-  output$notes <- renderUI({
-    req(input$run > 0); r <- req(res())
-    tagList(h6("Traitement des données"), tags$ul(class = "text-muted", lapply(r$p$notes, tags$li)))
-  })
 }
 
 shinyApp(ui, server)
