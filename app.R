@@ -96,6 +96,7 @@ ui <- page_fluid(
     .resume table {background: #fff; margin-bottom: 0;}
     .resume td, .resume th {text-align: right;}
     .resume td:first-child, .resume th:first-child {text-align: left;}
+    .resume .periode {font-weight: 400; color: #666;}
     .selectize-dropdown {z-index: 2000;}
     @media (max-width: 575px) {
       .entete img {height: 70px;} .entete h1 {font-size: 1.3rem;} .entete {gap: 14px;}
@@ -493,8 +494,10 @@ server <- function(input, output, session) {
       tags$table(class = "table table-sm",
         tags$thead(tags$tr(
           tags$th(""),
-          tags$th(sprintf("Moyenne avant (%d–%d)", min(f$years[avant]), max(f$years[avant]))),
-          tags$th(sprintf("Moyenne après (%d–%d)", min(f$years[apres]), max(f$years[apres]))))),
+          tags$th("Moyenne avant", tags$br(),
+                  tags$small(class = "periode", sprintf("%d–%d", min(f$years[avant]), max(f$years[avant])))),
+          tags$th("Moyenne après", tags$br(),
+                  tags$small(class = "periode", sprintf("%d–%d", min(f$years[apres]), max(f$years[apres])))))),
         tags$tbody(
           ligne("Unité traitée", f$y),
           ligne("Contrôle synthétique", f$synth))))
