@@ -43,7 +43,18 @@ jobs:
         shell: Rscript {0}
         run: |
           site <- file.path(Sys.getenv("RUNNER_TEMP"), "site")
-          shinylive::export(".", site)
+          # Titre et icône de l'onglet : ils appartiennent à la page extérieure
+          # (index.html), pas à l'appli, donc on les passe ici.
+          shinylive::export(".", site, template_params = list(
+            title = "Inférence causale",
+            include_in_head = '<link rel="icon" type="image/png" href="icone_ehesp.png">'
+          ))
+          # L'icône doit être servie à la racine du site, à côté de index.html
+          if (file.exists("www/icone_ehesp.png")) {
+            file.copy("www/icone_ehesp.png", file.path(site, "icone_ehesp.png"), overwrite = TRUE)
+          } else {
+            warning("www/icone_ehesp.png introuvable : pas d'icône d'onglet")
+          }
 
       - uses: actions/upload-pages-artifact@v3
         with:
