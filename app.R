@@ -111,170 +111,183 @@ ui <- page_fluid(
     .accordion-button:focus {box-shadow: none;}
                             "))),
   div(class = "conteneur",
-
+      
       
       
       
       # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       # Titre
-    div(class = "entete",
-      tags$img(src = "logo_ehesp.svg", alt = "EHESP"),
-      div(h1("Exercice : Inférence causale"),
-          p("Évaluer l'effet d'une intervention"))),
-    
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    # 
-    # accordion(
-    #   open = FALSE,                      # fermé au démarrage ; TRUE pour l'ouvrir
-    #   accordion_panel(
-    #     "Étapes de l'évaluation",
-    #     
-    #     tags$ol(
-    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle question veut-on résoudre ?")),
-    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles données ?")),
-    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle stratégie empirique ?")),
-    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quels sont les résultats ?")),
-    #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles recommandations ?"))
-    #     ),
-    #     p("Les étapes 1. et 2. sont déjà définies pour cet exercice."),
-    #     p("Voir cours ", tags$b("Inférence causale"), " pour plus de détails.")
-    #   )
-    # ),
-    
-    
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    # 
-    card(
-      class = "enonce",
-      card_header("Énoncé"),
-      card_body(
-        p("Les départements suivants ont mis en place une réorganisation hospitalière en 2018 : la Creuse, la Loire-Atlantique et l'Ille-et-Vilaine."),
-        p("Pour chacun de ces départements, évaluez l'impact sur le nombre de lits et répondez aux questions suivantes :"),
-        tags$ol(
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle est votre question de recherche ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quel est l'effet moyen de traitement (ATT) ? Quel est l'équivalent en pourcentage ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle est la p-value ? L'effet est-il significatif ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "L'hypothèse des tendances parallèles est-elle crédible ? Quelles sont les autres limites de l'étude ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles sont les pistes d'approfondissement ?")),
-          tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles sont vos recommandations ?"))
+      div(class = "entete",
+          tags$img(src = "logo_ehesp.svg", alt = "EHESP"),
+          div(h1("Exercice : Inférence causale"),
+              p("Évaluer l'effet d'une intervention"))),
+      
+      # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      # 
+      # accordion(
+      #   open = FALSE,                      # fermé au démarrage ; TRUE pour l'ouvrir
+      #   accordion_panel(
+      #     "Étapes de l'évaluation",
+      #     
+      #     tags$ol(
+      #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle question veut-on résoudre ?")),
+      #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles données ?")),
+      #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelle stratégie empirique ?")),
+      #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quels sont les résultats ?")),
+      #       tags$li(style = "color:#2039b9", tags$span(style = "color:#212529", "Quelles recommandations ?"))
+      #     ),
+      #     p("Les étapes 1. et 2. sont déjà définies pour cet exercice."),
+      #     p("Voir cours ", tags$b("Inférence causale"), " pour plus de détails.")
+      #   )
+      # ),
+      
+      
+      # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      # 
+      card(
+        class = "enonce",
+        card_header("Énoncé"),
+        card_body(
+          p(
+            "On suppose que les départements suivants ont mis en place une ",tags$strong("réorganisation hospitalière en 2019 : la Loire-Atlantique, la Creuse et l'Ille-et-Vilaine."),
+            " (Ces réorganisations sont fictives.)"
+          ),
+          p(
+            "Pour chacun de ces départements, évaluez ",tags$strong("l'impact")," de cette réorganisation sur le ",
+            tags$strong("nombre de lits hospitaliers (MCO)"),
+            " et répondez aux questions suivantes :"
+          ),
+          tags$ol(
+            tags$li(
+              style = "color:#2039b9",
+              tags$span(style = "color:#212529", "Quelle est votre question de recherche ?")
+            ),
+            tags$li(
+              style = "color:#2039b9",
+              tags$span(style = "color:#212529", "Quel est l'effet moyen du traitement (ATT) ? Quel est son équivalent en pourcentage ?")
+            ),
+            tags$li(
+              style = "color:#2039b9",
+              tags$span(style = "color:#212529", "Quelle est la p-value ? L'effet est-il statistiquement significatif ?")
+            ),
+            tags$li(
+              style = "color:#2039b9",
+              tags$span(style = "color:#212529", "L'hypothèse des tendances parallèles est-elle crédible ? Quelles sont les autres limites de l'étude ?")
+            ),
+            tags$li(
+              style = "color:#2039b9",
+              tags$span(style = "color:#212529", "Quelles pistes d'approfondissement pourriez-vous envisager ?")
+            ),
+            tags$li(
+              style = "color:#2039b9",
+              tags$span(style = "color:#212529", "Quelles recommandations pourriez-vous formuler ?")
+            )
+          )
+        )
+      ),
+      
+      # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      # 
+      accordion(
+        open = FALSE,
+        accordion_panel(
+          "Données",
+          p(strong("Données utilisées : "), "Statistique annuelle des établissements de santé (SAE)"),
+          p(strong("Granularité : "), "Année × établissement"),
+          p(strong("Période : "), "2013–2025"),
+          p(strong("Producteur : "), "Direction de la recherche, des études, de l'évaluation et des statistiques (DREES)"),
+          p(
+            strong("Informations : "),
+            "Enquête administrative exhaustive menée chaque année par la DREES auprès des établissements de santé publics et privés. Elle recueille des informations détaillées sur leur activité, leurs capacités d'accueil (lits et places), leurs équipements, leurs personnels et leur organisation."
+          )
+        )
+      ),
+      
+      # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      # 
+      accordion(
+        open = FALSE,
+        accordion_panel(
+          "Stratégie empirique",
+          p(strong("Méthode : "), "Contrôle synthétique (Synthetic Control Method, SCM)"),
+          p(
+            strong("Approche : "),
+            "Construction d'un contrefactuel combinant plusieurs unités non traitées, pondérées de manière à reproduire au mieux la trajectoire de l'unité traitée avant le choc."
+          ),
+          p(
+            strong("Estimation de l'effet : "),
+            "L'effet du choc est mesuré par l'écart entre l'unité traitée et son contrôle synthétique après le choc."
+          ),
+          p(
+            strong("Référence : "),
+            "Abadie, A., Diamond, A. & Hainmueller, J. (2010). ",
+            tags$i("Synthetic Control Methods for Comparative Case Studies: Estimating the Effect of California's Tobacco Control Program."),
+            " Journal of the American Statistical Association, 105(490), 493–505."
+          )
+        )
+      ),
+      
+      # 2. Paramètres
+      card(
+        card_header("Paramètres"),
+        card_body(
+          layout_columns(col_widths = c(4),
+                         fileInput("file", "Données (CSV)", accept = ".csv",
+                                   buttonLabel = "Parcourir", placeholder = "SAE par défaut")),
+          # Ordre : niveau, catégorie, raison sociale, unité traitée, année, variable.
+          # Listes courtes en menu natif (selectize = FALSE) : pas de clavier sur téléphone.
+          layout_columns(col_widths = c(4, 4, 4),
+                         radioButtons("level", "Niveau", c("Département" = "dept", "Établissement" = "etab"),
+                                      selected = "dept", inline = TRUE),
+                         conditionalPanel("input.level == 'etab'",
+                                          selectizeInput("cat", "Catégories", choices = NULL, multiple = TRUE,
+                                                         options = recherche(placeholder = TOUTES, plugins = list("remove_button")))),
+                         conditionalPanel("input.level == 'etab'",
+                                          selectizeInput("rs", "Raison sociale", choices = NULL, options = recherche()))
+          ),
+          layout_columns(col_widths = c(4, 4, 4),
+                         selectizeInput("treated", "Unité traitée", choices = NULL,
+                                        options = recherche(placeholder = "Choisir une unité")),
+                         selectInput("t0", "Première année traitée", choices = NULL, selectize = FALSE),
+                         selectInput("outcome", "Variable de résultat", choices = NULL, selectize = FALSE)
+          ),
+          div(class = "aide-carte", "Cliquer sur la carte pour choisir l'unité traitée ; molette, pincement ou boutons +/− pour zoomer."),
+          div(id = "carte"),
+          br(),
+          layout_columns(col_widths = c(4, 8),
+                         selectizeInput("excl", "Donneurs à exclure", choices = NULL, multiple = TRUE,
+                                        options = recherche(placeholder = "Aucun", plugins = list("remove_button"))),
+                         conditionalPanel("input.level == 'etab'",
+                                          div(style = "padding-top: 30px;",
+                                              checkboxInput("same_cat", "Comparer seulement à des établissements de la même catégorie (ex. un CHR avec d'autres CHR)", FALSE)))
+          )
+        )
+      ),
+      
+      actionButton("run", "Lancer", class = "btn-primary btn-lg w-100 mb-3"),
+      
+      # 3. Résultats
+      card(
+        card_header("Résultats"),
+        card_body(
+          navset_underline(
+            nav_panel("Résultat", div(
+              uiOutput("entete_traj"),
+              uiOutput("alerts"),
+              input_switch("show_synth", "Afficher le contrefactuel", TRUE),
+              input_switch("y0", "Axe des y à partir de 0", TRUE),
+              plotOutput("p_traj", height = "auto"),
+              uiOutput("resume_traj"))),
+            nav_panel("Placebos", div(
+              uiOutput("entete_gap"),
+              plotOutput("p_gap", height = "auto"))),
+            nav_panel("Poids", div(class = "tableau", br(), tableOutput("t_w"))),
+            nav_panel("Data", div(br(),
+                                  downloadButton("dl", "Télécharger (CSV)", class = "btn-outline-primary mb-3"),
+                                  div(class = "tableau", tableOutput("t_data"))))
+          )
         )
       )
-    ),
-
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    # 
-    card(
-      card_header("Données"),
-      card_body(
-        p(
-          strong("Données utilisées : "),
-          "Statistiques annuelles des établissements de santé (SAE)"
-        ),
-        p(
-          strong("Granularité : "),
-          "Année × établissement"
-        ),
-        p(
-          strong("Période : "),
-          "2013–2025"
-        ),
-        p(
-          strong("Producteur : "),
-          "Direction de la recherche, des études, de l'évaluation et des statistiques (DREES)"
-        ),
-        
-        p(
-          strong("Informations : "),
-          "Enquête administrative exhaustive menée chaque année par la DREES auprès des établissements de santé publics et privés. Elle recueille des informations détaillées sur leur activité, leurs capacités d’accueil (lits et places), leurs équipements, leurs personnels et leur organisation."
-        )
-      )
-    ),
-    
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    # 
-    card(
-      card_header("Stratégie empirique"),
-      card_body(
-        p(
-          strong("Stratégie empirique : "),
-          "Synthetic Control (SCM)"
-        ),
-        p(
-          strong("Approche : "),
-          "Construit un contrefactuel en combinant plusieurs unités non traitées, pondérées de manière à reproduire au mieux la trajectoire de l'unité traitée avant le choc."
-        ),
-        p(
-          strong("Estimation de l'effet : "),
-          "L'effet du choc est mesuré par l'écart entre l'unité traitée et son contrôle synthétique après le choc."
-        ),
-        p(
-          strong("Référence : "),
-          "Abadie, A., Diamond, A. & Hainmueller, J. (2010). ",
-          tags$i("Synthetic Control Methods for Comparative Case Studies: Estimating the Effect of California's Tobacco Control Program."),
-          " Journal of the American Statistical Association, 105(490), 493–505."
-        )
-      )
-    ),
-
-    # 2. Paramètres
-    card(
-      card_header("Paramètres"),
-      card_body(
-        layout_columns(col_widths = c(4),
-          fileInput("file", "Données (CSV)", accept = ".csv",
-                    buttonLabel = "Parcourir", placeholder = "SAE par défaut")),
-        # Ordre : niveau, catégorie, raison sociale, unité traitée, année, variable.
-        # Listes courtes en menu natif (selectize = FALSE) : pas de clavier sur téléphone.
-        layout_columns(col_widths = c(4, 4, 4),
-          radioButtons("level", "Niveau", c("Établissement" = "etab", "Département" = "dept"), inline = TRUE),
-          conditionalPanel("input.level == 'etab'",
-            selectizeInput("cat", "Catégories", choices = NULL, multiple = TRUE,
-                           options = recherche(placeholder = TOUTES, plugins = list("remove_button")))),
-          conditionalPanel("input.level == 'etab'",
-            selectizeInput("rs", "Raison sociale", choices = NULL, options = recherche()))
-        ),
-        layout_columns(col_widths = c(4, 4, 4),
-          selectizeInput("treated", "Unité traitée", choices = NULL, options = recherche()),
-          selectInput("t0", "Première année traitée", choices = NULL, selectize = FALSE),
-          selectInput("outcome", "Variable de résultat", choices = NULL, selectize = FALSE)
-        ),
-        div(class = "aide-carte", "Cliquer sur la carte pour choisir l'unité traitée ; molette, pincement ou boutons +/− pour zoomer."),
-        div(id = "carte"),
-        br(),
-        layout_columns(col_widths = c(4, 8),
-          selectizeInput("excl", "Donneurs à exclure", choices = NULL, multiple = TRUE,
-                         options = recherche(placeholder = "Aucun", plugins = list("remove_button"))),
-          conditionalPanel("input.level == 'etab'",
-            div(style = "padding-top: 30px;",
-              checkboxInput("same_cat", "Comparer seulement à des établissements de la même catégorie (ex. un CHR avec d'autres CHR)", FALSE)))
-        )
-      )
-    ),
-
-    actionButton("run", "Lancer", class = "btn-primary btn-lg w-100 mb-3"),
-
-    # 3. Résultats
-    card(
-      card_header("Résultats"),
-      card_body(
-        navset_underline(
-          nav_panel("Résultat", div(
-            uiOutput("entete_traj"),
-            uiOutput("alerts"),
-            input_switch("show_synth", "Afficher le contrefactuel", TRUE),
-            input_switch("y0", "Axe des y à partir de 0", TRUE),
-            plotOutput("p_traj", height = "auto"),
-            uiOutput("resume_traj"))),
-          nav_panel("Placebos", div(
-            uiOutput("entete_gap"),
-            plotOutput("p_gap", height = "auto"))),
-          nav_panel("Poids", div(class = "tableau", br(), tableOutput("t_w"))),
-          nav_panel("Data", div(br(),
-            downloadButton("dl", "Télécharger (CSV)", class = "btn-outline-primary mb-3"),
-            div(class = "tableau", tableOutput("t_data"))))
-        )
-      )
-    )
   ),
   tags$script(src = "carte.js")
 )
@@ -285,7 +298,7 @@ server <- function(input, output, session) {
     rv$df <- tryCatch(load_sae(input$file$datapath),
                       error = function(e) { showNotification(conditionMessage(e), type = "error"); rv$df })
   })
-
+  
   # ---- Référentiel des établissements (SAE x FINESS) -------------------
   etabs <- reactive({
     df <- rv$df
@@ -297,7 +310,7 @@ server <- function(input, output, session) {
     e$categ_niv3_lib[is.na(e$categ_niv3_lib)] <- "Non renseignée"
     e[order(e$last_an < max(df$AN), -e$size), ]      # du plus gros au plus petit, disparus en fin
   })
-
+  
   # ---- Filtre catégorie : réduit raisons sociales, FI et carte ------------
   # Sélection multiple ; aucune catégorie choisie = toutes les catégories
   sel_or_all <- function(x) length(x) > 0
@@ -310,34 +323,33 @@ server <- function(input, output, session) {
     cats <- sort(unique(etabs()$categ_niv3_lib)); cur <- isolate(input$cat)
     updateSelectizeInput(session, "cat", choices = cats, selected = intersect(cur, cats))
   })
-
+  
   unit_choices <- reactive({
     if (input$level == "dept") sort(unique(rv$df$dept)) else filtered()$FI
   })
   # Libellés affichés dans les listes : « Manche (50) » pour un département
   avec_noms <- function(ch, level) if (level == "dept") setNames(ch, dept_label(ch)) else ch
-
+  
   # Listes longues en mode serveur (server = TRUE) : le navigateur ne reçoit que
   # les options correspondant à la recherche. En contrepartie, chaque mise à jour
   # de la sélection doit renvoyer la liste complète des choix.
   maj_treated <- function(sel) updateSelectizeInput(session, "treated",
-    choices = avec_noms(unit_choices(), input$level), selected = sel, server = TRUE)
+                                                    choices = avec_noms(unit_choices(), input$level), selected = sel, server = TRUE)
   maj_rs <- function(sel) updateSelectizeInput(session, "rs",
-    choices = sort(unique(filtered()$rs)), selected = sel, server = TRUE)
-
+                                               choices = sort(unique(filtered()$rs)), selected = sel, server = TRUE)
+  
   # Listes « Unité traitée » et « Raison sociale », mises à jour ensemble
   observe({
     ch <- unit_choices(); cur <- isolate(input$treated)
-    sel <- if (!is.null(cur) && cur %in% ch) cur
-           else if (input$level == "dept") (if ("50" %in% ch) "50" else ch[1])
-           else { e <- filtered(); in50 <- e$FI[e$dept == "50"]; if (length(in50)) in50[1] else ch[1] }
+    # Pas de choix par défaut : on garde la sélection courante si elle reste valide, sinon vide
+    sel <- if (!is.null(cur) && cur %in% ch) cur else character(0)
     maj_treated(sel)
     if (input$level == "etab") {
       e <- filtered()
-      maj_rs(e$rs[match(sel, e$FI)])
+      maj_rs(if (length(sel)) e$rs[match(sel, e$FI)] else character(0))
     }
   })
-
+  
   # Synchronisation dans les deux sens : FI -> raison sociale, raison sociale -> FI
   observeEvent(input$treated, {
     if (input$level != "etab") return()
@@ -359,11 +371,12 @@ server <- function(input, output, session) {
   })
   observe({
     df <- rv$df; yrs <- sort(unique(df$AN)); nv <- numeric_vars(df)
-    updateSelectInput(session, "t0", choices = yrs[-(1:2)], selected = yrs[ceiling(length(yrs) * 0.6)])
-    updateSelectInput(session, "outcome", choices = setNames(nv, libelle_var(nv)),
-                      selected = if ("LIT_MCO" %in% nv) "LIT_MCO" else nv[1])
+    # Pas de valeur par défaut : l'utilisateur doit choisir l'année et la variable
+    updateSelectInput(session, "t0", choices = c("Choisir…" = "", yrs[-(1:2)]), selected = "")
+    updateSelectInput(session, "outcome", choices = c("Choisir…" = "", setNames(nv, libelle_var(nv))),
+                      selected = "")
   })
-
+  
   # ---- Carte (www/carte.js) ----------------------------------------------
   # Points (établissements) ou contours (départements) selon le niveau et les filtres
   observe({
@@ -374,7 +387,7 @@ server <- function(input, output, session) {
         em <- e[e$lat > 41 & e$lat < 52 & e$lon > -6 & e$lon < 10, ]
         if (nrow(em) == 0) em <- e
         cadre <- if (nrow(em) == 1) c(em$lat, em$lon)
-                 else list(c(min(em$lat), min(em$lon)), c(max(em$lat), max(em$lon)))
+        else list(c(min(em$lat), min(em$lon)), c(max(em$lat), max(em$lon)))
       }
       session$sendCustomMessage("carte_etabs", list(
         id = I(e$FI), lat = I(e$lat), lon = I(e$lon),
@@ -384,7 +397,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("carte_depts", list(sel = isolate(input$treated)))
     }
   })
-
+  
   # Mise en évidence de l'unité traitée
   sel_carte <- function(id, level, recentrer = TRUE) {
     if (is.null(id) || id == "") return()
@@ -398,16 +411,22 @@ server <- function(input, output, session) {
       recentrer = recentrer && !sel_or_all(isolate(input$cat))))
   }
   observeEvent(input$treated, sel_carte(input$treated, isolate(input$level)))
-
+  
   # Clic sur la carte = choix de l'unité traitée
   observeEvent(input$carte_clic, {
     id <- input$carte_clic
     if (id %in% unit_choices()) maj_treated(id)
   })
-
+  
   # ---- Estimation ---------------------------------------------------------
   res <- eventReactive(input$run, {
-    req(input$treated, input$t0, input$outcome)
+    manquants <- c("l'unité traitée", "la première année traitée", "la variable de résultat")[
+      !c(isTruthy(input$treated), isTruthy(input$t0), isTruthy(input$outcome))]
+    if (length(manquants)) {
+      showNotification(paste0("À choisir avant de lancer : ", paste(manquants, collapse = ", "), "."),
+                       type = "warning", duration = 8)
+      return(NULL)
+    }
     tryCatch({
       excl <- input$excl
       if (input$level == "etab" && isTRUE(input$same_cat)) {
@@ -422,29 +441,29 @@ server <- function(input, output, session) {
         p$notes <- c(p$notes, sprintf("Donneurs limités à la catégorie « %s ».", cat_t))
       fit <- scm_fit(p$Y, p$treated, p$donors, p$pre, NULL, lags = "mean", method = "synth")
       pl <- withProgress(message = "Calcul des placebos", value = 0,
-        scm_placebos(p$Y, p$treated, p$donors, p$pre, NULL, lags = "mean", method = "synth",
-                     progress = function(x) setProgress(x)))
+                         scm_placebos(p$Y, p$treated, p$donors, p$pre, NULL, lags = "mean", method = "synth",
+                                      progress = function(x) setProgress(x)))
       list(p = p, fit = fit, pl = pl, outcome = input$outcome, level = input$level,
            pv_all = scm_pvalue(fit, pl), pv_disc = scm_pvalue(fit, pl, MSPE_LIMIT),
            diag = scm_diagnostics(fit, p$Y, p$donors))
     }, error = function(e) { showNotification(conditionMessage(e), type = "error", duration = 10); NULL })
   })
-
+  
   attente <- function() validate(need(input$run > 0, "Choisir les paramètres puis cliquer sur « Lancer »."))
-
+  
   output$alerts <- renderUI({
     if (input$run == 0) return(NULL)
     r <- res(); if (is.null(r) || !length(r$diag)) return(NULL)
     lapply(r$diag, function(m) div(class = "alert alert-warning py-2 mb-2", m))
   })
-
+  
   nom_unite <- function(r) {
     if (r$level == "dept") return(dept_label(r$fit$treated))   # ex. « Manche (50) »
     r$fit$treated
   }
   largeur <- function(id) { w <- session$clientData[[paste0("output_", id, "_width")]]
-                            if (is.null(w) || w == 0) 800 else w }
-
+  if (is.null(w) || w == 0) 800 else w }
+  
   # Encadré au-dessus des graphiques : variable, raison sociale, unité traitée
   entete <- function(r, extra = NULL) {
     ligne <- function(lib, val) div(span(class = "lib", paste0(lib, " : ")), val)
@@ -459,11 +478,11 @@ server <- function(input, output, session) {
   output$entete_gap <- renderUI({
     req(input$run > 0); r <- req(res())
     entete(r, div(class = "pval",
-      sprintf("p-value = %.3f (rang %d sur %d, %d placebo(s) extrême(s) exclu(s)) ; sans exclusion : %.3f",
-              r$pv_disc$p, r$pv_disc$rang, r$pv_disc$n, r$pv_disc$exclus, r$pv_all$p),
-      br(), "Unité traitée en bleu, placebos en gris."))
+                  sprintf("p-value = %.3f (rang %d sur %d, %d placebo(s) extrême(s) exclu(s)) ; sans exclusion : %.3f",
+                          r$pv_disc$p, r$pv_disc$rang, r$pv_disc$n, r$pv_disc$exclus, r$pv_all$p),
+                  br(), "Unité traitée en bleu, placebos en gris."))
   })
-
+  
   output$p_traj <- renderPlot({
     attente(); r <- req(res()); f <- r$fit; w <- largeur("p_traj")
     synth <- isTRUE(input$show_synth)
@@ -481,7 +500,7 @@ server <- function(input, output, session) {
            lty = c("solid", if (synth) "42"), lwd = lw, bty = "n", seg.len = 2.5,
            horiz = !etroit, cex = (if (etroit) 1 else 0.9) * taille_txt(w), text.col = "#333333", x.intersp = 0.6, text.width = NA)
   }, height = function() hauteur_graph(largeur("p_traj")), res = 96)
-
+  
   # Moyennes avant / après sous le graphique, pour le traité et le contrôle synthétique
   output$resume_traj <- renderUI({
     req(input$run > 0); r <- req(res()); f <- r$fit
@@ -491,18 +510,18 @@ server <- function(input, output, session) {
     ligne <- function(lib, x) tags$tr(
       tags$td(lib), tags$td(num(moy(x, avant))), tags$td(num(moy(x, apres))))
     div(class = "resume tableau",
-      tags$table(class = "table table-sm",
-        tags$thead(tags$tr(
-          tags$th(""),
-          tags$th("Moyenne avant", tags$br(),
-                  tags$small(class = "periode", sprintf("%d–%d", min(f$years[avant]), max(f$years[avant])))),
-          tags$th("Moyenne après", tags$br(),
-                  tags$small(class = "periode", sprintf("%d–%d", min(f$years[apres]), max(f$years[apres])))))),
-        tags$tbody(
-          ligne("Unité traitée", f$y),
-          ligne("Contrôle synthétique", f$synth))))
+        tags$table(class = "table table-sm",
+                   tags$thead(tags$tr(
+                     tags$th(""),
+                     tags$th("Moyenne avant", tags$br(),
+                             tags$small(class = "periode", sprintf("%d–%d", min(f$years[avant]), max(f$years[avant])))),
+                     tags$th("Moyenne après", tags$br(),
+                             tags$small(class = "periode", sprintf("%d–%d", min(f$years[apres]), max(f$years[apres])))))),
+                   tags$tbody(
+                     ligne("Unité traitée", f$y),
+                     ligne("Contrôle synthétique", f$synth))))
   })
-
+  
   output$p_gap <- renderPlot({
     attente(); r <- req(res()); f <- r$fit; w <- largeur("p_gap")
     pl <- r$pl[vapply(r$pl, function(x) x$mspe_pre / f$mspe_pre < MSPE_LIMIT, logical(1))]
@@ -512,7 +531,7 @@ server <- function(input, output, session) {
     for (x in pl) lines(f$years, x$gap, col = GRIS, lwd = 1)
     lines(f$years, f$gap, col = BLEU, lwd = if (w < 500) 2.4 else 3.2)
   }, height = function() hauteur_graph(largeur("p_gap")), res = 96)
-
+  
   output$t_w <- renderTable({
     attente(); r <- req(res()); w <- r$fit$w; w <- sort(w[w > 0.001], decreasing = TRUE)
     d <- data.frame(Unité = names(w), Poids = round(w, 3))
@@ -522,24 +541,24 @@ server <- function(input, output, session) {
     } else d$Unité <- dept_label(d$Unité)
     d
   }, striped = TRUE, hover = TRUE, digits = 3)
-
+  
   serie_data <- reactive({
     r <- req(res()); f <- r$fit
     data.frame(annee = f$years, periode = ifelse(f$years < r$p$t0, "avant", "après"),
                traite = round(f$y, 3), synthetique = round(f$synth, 3), ecart = round(f$gap, 3))
   })
-
+  
   output$t_data <- renderTable({
     attente(); d <- serie_data()
     names(d) <- c("Année", "Période", "Traité", "Synthétique", "Écart")
     d
   }, striped = TRUE, hover = TRUE, digits = 3)
-
+  
   output$dl <- downloadHandler(
     filename = function() { r <- res(); sprintf("scm_%s_%s_%d.csv", r$fit$treated, r$outcome, r$p$t0) },
     content = function(file) utils::write.csv(serie_data(), file, row.names = FALSE)
   )
-
+  
 }
 
 shinyApp(ui, server)
