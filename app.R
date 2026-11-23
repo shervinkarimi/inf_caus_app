@@ -65,7 +65,6 @@ hauteur_graph <- function(w) if (w < 500) 340 else 520
 recherche <- function(...) modifyList(list(placeholder = "Rechercher", maxOptions = 5000), list(...))
 
 ui <- page_fluid(
-  title = "Inférence causale",
   theme = bs_theme(version = 5, primary = BLEU, "border-radius" = "0.6rem"),
   tags$head(
     tags$link(rel = "stylesheet", href = "leaflet/leaflet.css"),
@@ -150,12 +149,13 @@ ui <- page_fluid(
         card_header("Énoncé"),
         card_body(
           p(
-            "On suppose que les départements suivants ont mis en place une ",tags$strong("réorganisation hospitalière en 2019 : la Loire-Atlantique, la Creuse et l'Ille-et-Vilaine."),
-            " (Ces réorganisations sont fictives.)"
+            "On suppose que les départements suivants ont mis en place une ",tags$strong("réorganisation")," hospitalière en 2018 : ",
+            tags$strong("la Creuse, la Loire-Atlantique et l'Ille-et-Vilaine."),
+            " Ces réorganisations sont ", tags$strong("fictives.")
           ),
           p(
             "Pour chacun de ces départements, évaluez ",tags$strong("l'impact")," de cette réorganisation sur le ",
-            tags$strong("nombre de lits hospitaliers (MCO)"),
+            tags$strong("nombre de lits hospitaliers"),
             " et répondez aux questions suivantes :"
           ),
           tags$ol(
@@ -276,7 +276,7 @@ ui <- page_fluid(
               uiOutput("entete_traj"),
               uiOutput("alerts"),
               input_switch("show_synth", "Afficher le contrefactuel", TRUE),
-              input_switch("y0", "Axe des y à partir de 0", FALSE),
+              input_switch("y0", "Axe des y à partir de 0", TRUE),
               plotOutput("p_traj", height = "auto"),
               uiOutput("resume_traj"))),
             nav_panel("Placebos", div(
@@ -513,7 +513,6 @@ server <- function(input, output, session) {
     div(class = "resume tableau",
         tags$table(class = "table table-sm",
                    tags$thead(tags$tr(
-                     tags$link(rel = "icon", type = "image/svg+xml", href = "icone_ehesp.png"),
                      tags$th(""),
                      tags$th("Moyenne avant", tags$br(),
                              tags$small(class = "periode", sprintf("%d–%d", min(f$years[avant]), max(f$years[avant])))),
