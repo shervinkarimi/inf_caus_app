@@ -65,6 +65,7 @@ hauteur_graph <- function(w) if (w < 500) 340 else 520
 recherche <- function(...) modifyList(list(placeholder = "Rechercher", maxOptions = 5000), list(...))
 
 ui <- page_fluid(
+  title = "Inférence causale",
   theme = bs_theme(version = 5, primary = BLEU, "border-radius" = "0.6rem"),
   tags$head(
     tags$link(rel = "stylesheet", href = "leaflet/leaflet.css"),
@@ -512,6 +513,7 @@ server <- function(input, output, session) {
     div(class = "resume tableau",
         tags$table(class = "table table-sm",
                    tags$thead(tags$tr(
+                     tags$link(rel = "icon", type = "image/svg+xml", href = "icone_ehesp.png"),
                      tags$th(""),
                      tags$th("Moyenne avant", tags$br(),
                              tags$small(class = "periode", sprintf("%d–%d", min(f$years[avant]), max(f$years[avant])))),
